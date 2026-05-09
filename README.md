@@ -112,4 +112,4 @@ Install debug build:
 
 ## License
 
-Add your preferred license file (for example MIT or Apache-2.0) before public distribution.
+MIT
