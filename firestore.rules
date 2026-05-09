@@ -1,0 +1,80 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper function to check if user is signed in
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Helper to check if the user is accessing their own data
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Users collection
+    match /users/{userId} {
+      // Allow read to authenticated users to support search by phone and getting friend details
+      allow read: if isSignedIn();
+      
+      // Allow create if the user is creating their own profile (SignUp)
+      allow create: if isOwner(userId);
+      
+      // Allow update if:
+      // 1. User is updating their own profile
+      // 2. A transaction is adding the current user to another user's friend list (Accept Friend Request)
+      allow update: if isOwner(userId) || 
+                    (isSignedIn() && 
+                     request.resource.data.diff(resource.data).affectedKeys().hasOnly(['friends']) &&
+                     request.resource.data.friends.hasAny([request.auth.uid]));
+    }
+
+    // Friend Requests collection
+    match /friendRequests/{requestId} {
+      // Allow create if the sender is the current user
+      allow create: if isSignedIn() && request.resource.data.fromUid == request.auth.uid;
+      
+      // Allow read if the user is the sender or the receiver
+      allow read: if isSignedIn() && (resource.data.fromUid == request.auth.uid || resource.data.toUid == request.auth.uid);
+      
+      // Allow update (accept/reject) if the user is the receiver
+      allow update: if isSignedIn() && resource.data.toUid == request.auth.uid;
+      
+      // Allow delete if needed (sender cancels or receiver deletes)
+      allow delete: if isSignedIn() && (resource.data.fromUid == request.auth.uid || resource.data.toUid == request.auth.uid);
+    }
+
+    // Family collection
+    match /family/{familyId} {
+      // Allow create if the owner is the current user
+      allow create: if isSignedIn() && request.resource.data.ownerUid == request.auth.uid;
+      
+      // Allow read if the user is a member of the family
+      allow read: if isSignedIn() && resource.data.members.hasAny([request.auth.uid]);
+      
+      // Allow update if the user is a member (e.g. updating details)
+      allow update: if isSignedIn() && resource.data.members.hasAny([request.auth.uid]);
+    }
+
+    // Live Locations collection
+    match /liveLocations/{userId} {
+      // Allow write (create/update) only by the user themselves
+      allow write: if isOwner(userId);
+      
+      // Allow read:
+      // 1. By the user themselves
+      // 2. By friends (cross-referenced from users collection)
+      allow read: if isOwner(userId) || 
+                  (isSignedIn() && get(/databases/$(database)/documents/users/$(userId)).data.friends.hasAny([request.auth.uid]));
+    }
+
+    // Location History collection (locations)
+    match /locations/{locationId} {
+      // Allow create if the location data belongs to the current user
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      
+      // Allow read if the location data belongs to the current user
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+  }
+}

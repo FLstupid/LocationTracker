@@ -1,0 +1,5 @@
+## Copy this file to local.properties and fill your local values.
+## Do not commit local.properties.
+
+sdk.dir=C\\:\\Users\\YOUR_USER\\AppData\\Local\\Android\\Sdk
+MAPS_API_KEY=YOUR_MAPS_API_KEY

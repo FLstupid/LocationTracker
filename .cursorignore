@@ -1,0 +1,36 @@
+﻿# Secrets and credentials
+local.properties
+app/google-services.json
+**/google-services.json
+GoogleService-Info.plist
+keystore.properties
+secrets.properties
+.env
+.env.*
+*.jks
+*.keystore
+*.p12
+*.pem
+*.key
+# Build outputs and local artifacts
+.gradle/
+.kotlin/
+build/
+**/build/
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+*.ap_
+*.dex
+*.hprof
+*.log
+*.tmp
+*.cache
+# IDE and agent artifacts
+.idea/
+.cursor/
+agent-transcripts/
+terminals/
+AGENTS.md
